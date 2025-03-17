@@ -17,10 +17,12 @@ To run locally you need to have a local config file called `local.settings.json`
 {
   "AzureWebJobsStorage": "useDevelopmentStorage=true",
   "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+  "KeyVaultURI": "<your key vault uri>",
+  "ClientSecretName": "<your client secret name in key vault>",
   "TenantId": "<your tenant id>",
   "ClientId": "<your client id>",
   "ClientSecret": "<your client secret>",
-  "AppRegistrationId": "<your app registration id>"
+  "AppRegistrationObjectId": "<your app registration object id>"
 }
 ```
 
