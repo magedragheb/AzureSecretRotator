@@ -6,6 +6,7 @@ local.settings.json
 
 # Azurite
 __azurite*
+__blob*
 
 # User-specific files
 *.suo
