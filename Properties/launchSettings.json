@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "AzureSecretRotator": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7135",
+      "launchBrowser": false
+    }
+  }
+}
