@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
 using Microsoft.Graph.Applications.Item.AddPassword;
-using Microsoft.Graph.Applications.Item.RemovePassword;
 using Microsoft.Graph.Models;
 
 namespace AzureSecretRotator;
@@ -15,7 +14,7 @@ public class Timer(ILoggerFactory loggerFactory, IConfiguration config)
     private readonly ILogger _logger = loggerFactory.CreateLogger<Timer>();
 
     [Function("Timer")]
-    public async Task Run([TimerTrigger("0 0 * * *")] TimerInfo myTimer)
+    public async Task Run([TimerTrigger("0 0 */175 * *")] TimerInfo myTimer)
     {
         _logger.LogInformation("C# Timer trigger function executed at: {}", DateTime.UtcNow.ToLocalTime());
 
@@ -40,6 +39,8 @@ public class Timer(ILoggerFactory loggerFactory, IConfiguration config)
 
         _logger.LogInformation("Secret rotation completed at: {}", DateTime.UtcNow.ToLocalTime());
 
+        graphClient.Dispose();
+
     }
 
     public async Task<string> GetKeyVaultSecret(string secretName)
@@ -57,6 +58,7 @@ public class Timer(ILoggerFactory loggerFactory, IConfiguration config)
         }
     }
 
+
     public async Task AddAppSecret(GraphServiceClient graphClient, string AppObjectId)
     {
         var requestBody = new AddPasswordPostRequestBody
@@ -64,7 +66,7 @@ public class Timer(ILoggerFactory loggerFactory, IConfiguration config)
             PasswordCredential = new PasswordCredential
             {
                 DisplayName = config["ClientSecretName"],
-                EndDateTime = DateTime.UtcNow.AddDays(1)
+                EndDateTime = DateTime.UtcNow.AddDays(180)
             },
         };
         try
@@ -85,14 +87,10 @@ public class Timer(ILoggerFactory loggerFactory, IConfiguration config)
         var app = await graphClient.Applications[AppObjectId].GetAsync();
         if (app is not null && app.PasswordCredentials is not null)
         {
-            var expiredPassword = app.PasswordCredentials.Where(x => x.DisplayName == config["ClientSecretName"]).FirstOrDefault() ?? throw new Exception("Expired password not found.");
-            var requestBody = new RemovePasswordPostRequestBody
-            {
-                KeyId = expiredPassword.KeyId,
-            };
+            app.PasswordCredentials.RemoveAll(x => x.EndDateTime < DateTime.UtcNow);
             try
             {
-                await graphClient.Applications[AppObjectId].RemovePassword.PostAsync(requestBody);
+                await graphClient.Applications[AppObjectId].PatchAsync(app);
             }
             catch (Exception ex)
             {
